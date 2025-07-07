@@ -11,9 +11,11 @@ import {
   DollarSign,
   Calendar,
   Building,
-  User as UserIcon
+  User as UserIcon,
+  CreditCard
 } from 'lucide-react';
 import PolicyRequestModal from './PolicyRequestModal';
+import InsuranceCompanies from './InsuranceCompanies';
 
 interface ClientDashboardProps {
   user: User;
@@ -55,6 +57,7 @@ interface Policy {
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ user }) => {
   const [family, setFamily] = useState<Family | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [activeTab, setActiveTab] = useState<'policies' | 'companies'>('policies');
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestType, setRequestType] = useState<'new_policy' | 'edit_policy'>('new_policy');
@@ -196,7 +199,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user }) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Family Overview */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 flex items-center">
               <Users className="w-6 h-6 mr-2" />
@@ -227,113 +230,149 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* Policies */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-              <FileText className="w-6 h-6 mr-2" />
-              Family Policies ({policies.length})
-            </h2>
-            <button
-              onClick={handleNewPolicyRequest}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Request New Policy
-            </button>
-          </div>
-
-          {policies.length > 0 ? (
-            <div className="grid gap-6">
-              {policies.map((policy) => (
-                <div key={policy.id} className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition-colors">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <h3 className="text-lg font-medium text-gray-900 mr-3">
-                        {policy.policy_type}
-                      </h3>
-                      <span className={`px-3 py-1 text-sm rounded-full ${getStatusColor(policy.status)}`}>
-                        {policy.status}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleEditPolicyRequest(policy)}
-                      className="flex items-center px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4 mr-2" />
-                      Request Edit
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center">
-                      <FileText className="w-5 h-5 text-gray-400 mr-2" />
-                      <div>
-                        <p className="text-sm text-gray-600">Policy Number</p>
-                        <p className="font-medium">{policy.policy_number || 'N/A'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <Building className="w-5 h-5 text-gray-400 mr-2" />
-                      <div>
-                        <p className="text-sm text-gray-600">Insurance Company</p>
-                        <p className="font-medium">{policy.insurance_company || 'N/A'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
-                      <div>
-                        <p className="text-sm text-gray-600">Premium</p>
-                        <p className="font-medium">
-                          {policy.premium_amount ? `$${policy.premium_amount.toLocaleString()}` : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
-                      <div>
-                        <p className="text-sm text-gray-600">Coverage</p>
-                        <p className="font-medium">
-                          {policy.coverage_amount ? `$${policy.coverage_amount.toLocaleString()}` : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center">
-                      <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-600">
-                        Policy Holder: <span className="font-medium">
-                          {policy.profiles.first_name} {policy.profiles.last_name}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      {policy.start_date ? new Date(policy.start_date).toLocaleDateString() : 'N/A'} - 
-                      {policy.end_date ? new Date(policy.end_date).toLocaleDateString() : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Policies Yet</h3>
-              <p className="text-gray-600 mb-6">Your family doesn't have any policies yet.</p>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
               <button
-                onClick={handleNewPolicyRequest}
-                className="flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                onClick={() => setActiveTab('policies')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'policies'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Request Your First Policy
+                <FileText className="w-4 h-4 inline mr-2" />
+                Family Policies ({policies.length})
               </button>
-            </div>
+              <button
+                onClick={() => setActiveTab('companies')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'companies'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Building className="w-4 h-4 inline mr-2" />
+                Insurance Companies
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          {activeTab === 'policies' ? (
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <FileText className="w-6 h-6 mr-2" />
+                  Family Policies ({policies.length})
+                </h2>
+                <button
+                  onClick={handleNewPolicyRequest}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Request New Policy
+                </button>
+              </div>
+
+              {policies.length > 0 ? (
+                <div className="grid gap-6">
+                  {policies.map((policy) => (
+                    <div key={policy.id} className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-medium text-gray-900 mr-3">
+                            {policy.policy_type}
+                          </h3>
+                          <span className={`px-3 py-1 text-sm rounded-full ${getStatusColor(policy.status)}`}>
+                            {policy.status}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleEditPolicyRequest(policy)}
+                          className="flex items-center px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Request Edit
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="flex items-center">
+                          <FileText className="w-5 h-5 text-gray-400 mr-2" />
+                          <div>
+                            <p className="text-sm text-gray-600">Policy Number</p>
+                            <p className="font-medium">{policy.policy_number || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Building className="w-5 h-5 text-gray-400 mr-2" />
+                          <div>
+                            <p className="text-sm text-gray-600">Insurance Company</p>
+                            <p className="font-medium">{policy.insurance_company || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center">
+                          <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
+                          <div>
+                            <p className="text-sm text-gray-600">Premium</p>
+                            <p className="font-medium">
+                              {policy.premium_amount ? `$${policy.premium_amount.toLocaleString()}` : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center">
+                          <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
+                          <div>
+                            <p className="text-sm text-gray-600">Coverage</p>
+                            <p className="font-medium">
+                              {policy.coverage_amount ? `$${policy.coverage_amount.toLocaleString()}` : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <div className="flex items-center">
+                          <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-600">
+                            Policy Holder: <span className="font-medium">
+                              {policy.profiles.first_name} {policy.profiles.last_name}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          {policy.start_date ? new Date(policy.start_date).toLocaleDateString() : 'N/A'} - 
+                          {policy.end_date ? new Date(policy.end_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Policies Yet</h3>
+                  <p className="text-gray-600 mb-6">Your family doesn't have any policies yet.</p>
+                  <button
+                    onClick={handleNewPolicyRequest}
+                    className="flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Request Your First Policy
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <InsuranceCompanies familyId={family.id} allPolicies={policies} />
           )}
         </div>
       </div>
