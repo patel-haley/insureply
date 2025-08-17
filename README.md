@@ -1,0 +1,1 @@
+built for a fast-scaling insurance company with 500+ clients, the all-in-one dashboard allows each client to securely access and manage all financial information, but specifically made for insurance policies.
